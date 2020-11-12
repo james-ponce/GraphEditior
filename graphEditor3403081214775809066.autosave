@@ -1,9 +1,0 @@
-ArrayList<Node> list = new ArrayList<Node>();
-
-
-void setup(){
-    size(640,640);
-}
-
-void draw(){
-}
