@@ -1,0 +1,9 @@
+//Class that represents all nodes.
+
+public class Node{
+//private ellipse node;
+
+    Node(int x, int y){
+        //node = new ellipse(x,y,25,25)
+    }
+}
