@@ -65,6 +65,10 @@ public class Node{
         Node endNode;
 
         _edges.add(e);
+        if (e.getPosOneNode() == e.getPosTwoNode()){
+            handleLoops(e.getPosOneNode());
+            return;
+        }
 
         if(e.getPosOneNode() != this){
             check = _edgeCount.containsKey(e.getPosOneNode());
@@ -79,7 +83,10 @@ public class Node{
             Integer count = _edgeCount.get(endNode);
             _edgeCount.put(endNode, count+1);
 
-            handleParralelEdges(endNode);
+            
+                handleParralelEdges(endNode);
+        
+            
         }
         else{
             _edgeCount.put(endNode, 1);
@@ -87,12 +94,48 @@ public class Node{
     }
 
     public void removeEdge(Edge e){
-        _edges.remove(e);
+        Node endNode;
+        boolean check;
 
+        println("removing edge");
+        if (e.getPosOneNode() == e.getPosTwoNode()){
+            handleLoops(e.getPosOneNode());
+            return;
+        }
+
+        println("checking for parrallel");
+        if(e.getPosOneNode() != this){
+            check = _edgeCount.containsKey(e.getPosOneNode());
+            endNode = e.getPosOneNode();
+        }
+        else{
+            check = _edgeCount.containsKey(e.getPosTwoNode());
+            endNode = e.getPosTwoNode();
+        }
+
+        if(check){
+            Integer count = _edgeCount.get(endNode);
+            handleParralelEdges(endNode);
+        }
         
+        
+
+    }
+
+    private void handleLoops(Node base){
+        int offset = 0;
+        println("handling loops");
+
+        for(Edge e: _edges){
+            if (e.getPosOneNode() == base && e.getPosTwoNode() == base){
+                e.setOffset(offset);
+                offset += 5;
+            }
+        }
     }
 
     private void handleParralelEdges(Node end){
+        println("parrallel");
         boolean oddCount = ((_edgeCount.get(end) % 2) == 1);
         int offset = oddCount?0:5;
 

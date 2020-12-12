@@ -6,6 +6,7 @@ class Edge{
     private int _offset;
     private Directed direction;
     private Node _n1, _n2;
+    private int _r, _g, _b;
 
     Edge(float x1, float y1, float x2, float y2){
         _posX1 = x1;
@@ -16,6 +17,10 @@ class Edge{
         _n1 = null;
         _n2 = null;
         _offset = 0;
+
+        _r = 0; 
+        _g = 0;
+         _b = 0;
     }
 
     Edge(Node n1, Node n2){
@@ -27,6 +32,24 @@ class Edge{
         _n1 = n1;
         _n2 = n2;
         _offset = 0;
+
+        _r = 0; 
+        _g = 0;
+         _b = 0;
+    }
+
+    Edge(Node n1){
+        _posX1 = n1.getPositionX();
+        _posY1 = n1.getPositionY();
+        _posX2 = n1.getPositionX();
+        _posY2 = n1.getPositionY();
+        direction = Directed.NONE;
+        _n1 = n1;
+        _n2 = null;
+        _offset = 0;
+        _r = 0; 
+        _g = 0;
+         _b = 0;
     }
 
     public void setPosOne(float x1, float y1){
@@ -45,6 +68,7 @@ class Edge{
     }
 
     public void setOffset(int offset){
+        println(offset);
         _offset = offset;
     }
 
@@ -96,8 +120,37 @@ class Edge{
         return (node == _n1) || (node == _n2);
     }
 
+    public Edge setFill(int r, int g, int b){
+        this._r = r;
+        this._g = g;
+        this._b = b;
+
+        return this;
+    }
+
+    public Edge setFill(int shade){
+        _r = shade;
+        _g = shade;
+        _b = shade;
+
+        return this;
+    }
+
     public void display(){
-        line(_posX1, _posY1, _posX2, _posY2);
+        stroke(_r, _g, _b);
+        
+        if (_n1 != _n2){
+            
+            line(_posX1, _posY1, _posX2, _posY2);
+        }
+        else{
+            stroke(0);
+            noFill();
+            circle(_n1.getPositionX()+25+(_offset/2), _n2.getPositionY()+25+(_offset/2),100+_offset);
+        }
+        
+        stroke(0);
+
     }
 
     private void computeOffSet(){

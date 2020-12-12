@@ -1,10 +1,16 @@
+import java.util.Map;
+import java.util.Stack;
+
 ArrayList<Node> list = new ArrayList<Node>();
 ArrayList<Edge> edgeList = new ArrayList<Edge>();
 Edge tempEdge = null; // An edge just meant represent a new edge until the edge is committed to nodes.
 Node tempNode = null;
 Node selectedNode = null;
+
+
+
 void setup (){
-    size(640,640);
+    size(1020,1020);
     background(255);
     //noStroke();
 }
@@ -13,6 +19,7 @@ void draw (){
     background(255);
     fill(255);
     textSize(20);
+    findBridges();
 
     for (Node x: list){
         strokeWeight(3);
@@ -29,7 +36,7 @@ void draw (){
         tempEdge.display();
     }
 
-    String info = "n=" + list.size() + " m=" + edgeList.size();
+    String info = "n=" + list.size() + " m=" + edgeList.size() + " components=" + computeComponents();
 
     fill(0);
     textSize(32);
@@ -128,6 +135,7 @@ void keyPressed(){
             }
 
             if (found != null){
+                selectedNode.removeEdge(found);
                 selectedNode.getList().remove(found);
                 if(loop)
                     selectedNode.getList().remove(found);
@@ -143,7 +151,7 @@ void mousePressed(){
             if (node.clicked(mouseX, mouseY)){
                 
                 if(tempEdge == null)
-                    tempEdge = new Edge(mouseX, mouseY, mouseX, mouseY);
+                    tempEdge = new Edge(node);
 
                 return;
             }
@@ -185,15 +193,12 @@ void mouseReleased() {
 
     Node head = null, tail = null;
 
-    for (Node node: list){
-        float centerX = node.getCenterX(), centerY = node.getCenterY();
-        float distance = sqrt(pow((centerX-tempEdge.getPosOne()[0]), 2) + pow((centerY-tempEdge.getPosOne()[1]), 2));
-        if (distance < node.getRadius()){
+    for (Node node: list){;
+        if (node.clicked(tempEdge.getPosOne()[0], tempEdge.getPosOne()[1])){
             head = node;
         }
         
-        distance = sqrt(pow((centerX-tempEdge.getPosTwo()[0]), 2) + pow((centerY-tempEdge.getPosTwo()[1]), 2));
-        if (distance < node.getRadius()){
+        if (node.clicked(tempEdge.getPosTwo()[0], tempEdge.getPosTwo()[1])){
             tail = node;
         }
 
@@ -203,14 +208,136 @@ void mouseReleased() {
     }
 
     if (head != null && tail != null){
+        println(head, tail);
         
-        tempEdge.setEndPoints(head, tail);
+        Edge newEdge = new Edge(head, tail);
 
-        head.addEdge(tempEdge);
-        tail.addEdge(tempEdge);
-        edgeList.add(tempEdge);
+        head.addEdge(newEdge);
+        tail.addEdge(newEdge);
+        edgeList.add(newEdge);
 
         tempEdge.update();
     }
     tempEdge = null;
+}
+
+public int computeComponents(){
+
+    int[][] adjacencyMatrix = new int[list.size()][list.size()];
+    int[][] searched = new int[list.size()][list.size()];
+
+    HashMap<Node,Integer> nodes = new HashMap<Node,Integer>();
+    HashMap<Integer,Node> reverseNodes = new HashMap<Integer,Node>();
+    HashMap<Node, Integer> visited = new HashMap<Node,Integer>();
+
+    int components = 0;
+
+    for (int i = 0; i < list.size(); i++){
+        nodes.put(list.get(i), i);
+        reverseNodes.put(i, list.get(i));
+    }
+
+    for (Edge e: edgeList){
+        adjacencyMatrix[nodes.get(e.getPosOneNode())][nodes.get(e.getPosTwoNode())] += 1;
+        adjacencyMatrix[nodes.get(e.getPosTwoNode())][nodes.get(e.getPosOneNode())] += 1;
+    }
+
+    Stack<Integer> stack =new Stack<Integer>();
+
+    for(Node node: list){
+        Integer nodeI = nodes.get(node);
+    
+        stack.push(nodeI);
+
+        if(visited.containsKey(node)){
+            continue;
+        }
+
+        while(stack.size() > 0){
+            boolean pushed = false;
+            for(int i = 0; i < list.size() && !pushed; i++){
+                boolean adjacencyFound = adjacencyMatrix[stack.peek()][i] > 0;
+                boolean notSearched = searched[stack.peek()][i] == 0;
+                
+                if (adjacencyFound && notSearched){
+                    searched[stack.peek()][i] = 1;
+                    visited.put(reverseNodes.get(i), 1);
+                    stack.push(i);
+                    pushed = true;
+                }
+            }
+
+            if (!pushed){
+                stack.pop();
+            }
+        }
+        components++;
+    }
+
+    return components;
+}
+
+
+public int DFS(Node n, Edge e){
+    HashMap<Edge,Integer> visited = new HashMap<Edge,Integer>();
+
+    Stack<Node> stack = new Stack<Node>();
+
+    visited.put(e, 1);
+
+    Node nextNode = e.getPosOneNode() == n? e.getPosTwoNode() : e.getPosOneNode();
+    stack.push(nextNode);
+    boolean moved = false;
+    while (!stack.isEmpty()){
+        for(Edge path: nextNode.getList()){
+            if (visited.containsKey(path)){
+                continue;
+            }
+
+            nextNode = path.getPosOneNode() == stack.peek() ? path.getPosTwoNode() : path.getPosOneNode();
+            visited.put(path, 1);
+            stack.push(nextNode);
+            moved = true;
+
+            if (nextNode == n){
+                return 1;
+            }
+            
+            break;
+
+        }
+
+        if(!moved){
+            stack.pop();
+            if(!stack.isEmpty()){nextNode = stack.peek();}
+        }
+        else{
+            moved = false;
+        }
+        
+        
+    }
+
+    return 0;
+
+}
+
+public void findBridges(){
+
+    for (Node n : list){
+        ArrayList<Edge> nEdgeList = n.getList();
+        
+
+        for (Edge e: nEdgeList){
+            if (DFS(n,e) == 1) 
+            {
+                
+                e.setFill(0);
+            }
+            else{
+                e.setFill(255, 0, 0);
+            }
+        }
+
+    }
 }
