@@ -31,6 +31,12 @@ public class Node{
         _b = b;
     }
 
+    public void setFill (int gray){
+        _r = gray;
+        _g = gray;
+        _b = gray;
+    }
+
     public void setPosition(float x, float y){
         _posX = x;
         _posY = y;
@@ -177,6 +183,17 @@ public class Node{
         ellipse(_posX, _posY, _size, _size);
 
         fill(255);
-        text(_edges.size(), _posX-2, _posY);
+        text(_edges.size(), _posX-5, _posY+5);
+    }
+
+    public void display(int label){
+        fill(_r, _g, _b);
+        
+        ellipse(_posX, _posY, _size, _size);
+
+        fill(255);
+        text(_edges.size(), _posX-5, _posY+5);
+        fill(0);
+        text(label, _posX+25, _posY+25);
     }
 }

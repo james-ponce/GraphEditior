@@ -1,13 +1,19 @@
 import java.util.Map;
 import java.util.Stack;
+import java.util.Queue;
+import java.util.LinkedList;
 
 ArrayList<Node> list = new ArrayList<Node>();
 ArrayList<Edge> edgeList = new ArrayList<Edge>();
 Edge tempEdge = null; // An edge just meant represent a new edge until the edge is committed to nodes.
 Node tempNode = null;
 Node selectedNode = null;
+boolean colorMode = false;
+boolean labelMode = false;
+boolean snappingMode = false;
+int snapDistance = 25;
 
-
+int[][] colorList = {{35,194,66},{29,80,205},{239,125,102}, {61,135,184}};
 
 void setup (){
     size(1020,1020);
@@ -21,14 +27,34 @@ void draw (){
     textSize(20);
     findBridges();
 
+    int label = 1;
+
+    if (snappingMode){
+        fill(125);
+        for(int i = 0; i < height/snapDistance; i++){
+            line(0, snapDistance*i, width, snapDistance*i);
+        }
+        for(int i = 0; i < width/snapDistance; i++){
+            line(snapDistance*i, 0, snapDistance*i, height);
+        }
+    }
+
     for (Node x: list){
         strokeWeight(3);
         x.displayEdge();
     }
 
     for (Node x: list){
-        strokeWeight(0);
-        x.display();
+
+        if(labelMode){
+            strokeWeight(0);
+            x.display(label++);
+        }
+        else{
+            strokeWeight(0);
+            x.display();
+        }
+        
     }
 
     if (tempEdge != null){
@@ -36,7 +62,10 @@ void draw (){
         tempEdge.display();
     }
 
-    String info = "n=" + list.size() + " m=" + edgeList.size() + " components=" + computeComponents();
+    int minColoring = minimalColoring();
+    int components = computeComponents();
+
+    String info = "n=" + list.size() + " m=" + edgeList.size() + " components=" + components+ "minimal coloring="+ minColoring + " bipartite= " + ((minColoring == 2 && components == 1)? "true" : "false");
 
     fill(0);
     textSize(32);
@@ -51,9 +80,9 @@ void mouseClicked(){
 
             float distance = sqrt(pow((centerX-mouseX), 2) + pow((centerY-mouseY), 2));
             if (distance < node.getRadius()){
-                return;
-            }
-        }
+                return; //<>// //<>//
+            } //<>// //<>//
+        } //<>// //<>//
 
         list.add(new Node(mouseX, mouseY));
     }
@@ -71,8 +100,8 @@ void mouseClicked(){
                 }
             }
         }
-    }
-        
+    } //<>// //<>//
+         //<>// //<>//
 }
 
 void keyPressed(){
@@ -142,6 +171,28 @@ void keyPressed(){
             }
         }
     }
+    else if(key == 'c'){
+        colorMode = !colorMode;
+    }
+
+    else if(key == 'l'){
+        labelMode = !labelMode;
+    }
+    else if(key == 's'){
+        if (!snappingMode){
+            snappingMode = true;
+            snapDistance = 25;
+        }
+        else{
+            if (snapDistance == 200){
+                snappingMode = false;
+                snapDistance = 25;
+            }
+            else{
+                snapDistance*=2;
+            }
+        }
+    }
     
 }
 
@@ -176,7 +227,27 @@ void mouseDragged() {
         tempEdge.setPosTwo(mouseX, mouseY);
     }
     else if (tempNode != null){
-        tempNode.setPosition((float)mouseX, (float)mouseY);
+        if (snappingMode){
+            int blockX = mouseX/snapDistance, blockY = mouseY/snapDistance, snapX = mouseX%snapDistance, snapY = mouseY%snapDistance;
+
+            if(snapX < snapDistance/2){
+                blockX *= snapDistance;
+            }
+            else{
+                blockX = blockX*snapDistance + snapDistance;
+            }
+            if(snapY < snapDistance/2){
+                blockY *= snapDistance;
+            }
+            else{
+                blockY = blockY*snapDistance + snapDistance;
+            }
+
+            tempNode.setPosition((float)(blockX), (float)(blockY));
+        }
+        else{
+            tempNode.setPosition((float)mouseX, (float)mouseY);
+        }
     }
     
 }
@@ -340,4 +411,72 @@ public void findBridges(){
         }
 
     }
+}
+
+public int minimalColoring(){
+    int colors = 0;
+    
+    HashMap<Node, Integer> coloring = new HashMap<Node, Integer>();
+    Queue<Node> queue = new LinkedList<Node>();
+
+    for(Node node: list){
+        if (coloring.containsKey(node) && coloring.get(node) != 0){
+            continue;
+        }
+
+        coloring.put(node, 0);
+        queue.add(node);
+        while(queue.peek()!= null){ //<>//
+          
+            Node current = queue.remove();
+            if(coloring.get(current) != 0){
+                println("value ",coloring.get(current));
+                continue;
+            }
+            
+            HashMap<Integer, Node> connectedColors = new HashMap<Integer, Node>(); //<>//
+            for (Edge e: current.getList()){
+                Node opposite = (e.getPosOneNode() == current?e.getPosTwoNode():e.getPosOneNode());
+                if (coloring.containsKey(opposite)){
+                    connectedColors.put(coloring.get(opposite), null);
+                    continue; //<>//
+                }
+                else{
+                    queue.add(opposite);
+                    coloring.put(opposite, 0);
+                }
+            }
+            
+            int testColor = 1;
+            boolean placed = false;
+            while(true){
+                if (connectedColors.containsKey(testColor)){
+                    testColor++;
+                }
+                else{
+                    if (testColor > colors){
+                        colors = testColor;
+                    }
+                    if(colorMode && testColor-1 < colorList.length){
+                        int r = colorList[testColor-1][0];
+                        int g = colorList[testColor-1][1];
+                        int b = colorList[testColor-1][2];
+                        current.setFill(r,g,b);
+                    }
+                    else{
+                        current.setFill(0);
+                    }
+                    coloring.put(current, testColor);
+                    break;
+                }
+            }
+        }
+        
+        
+
+        
+    }
+
+
+    return colors;
 }
